@@ -1,38 +1,26 @@
-from collections import namedtuple
-import altair as alt
-import math
-import pandas as pd
+from typing import List, Any
+
 import streamlit as st
 
-"""
-# Welcome to Streamlit!
 
-Edit `/streamlit_app.py` to customize this app to your heart's desire :heart:
+def selectbox_with_query_storage(label: str, options: List[Any], query_param_name: str, **kwargs):
+    default_index = 0
+    current_query_params = st.experimental_get_query_params()
+    current_value_params = current_query_params.get(query_param_name, [])
+    current_value = None
+    if len(current_value_params) == 1:
+        current_value_str = current_value_params[0]
+        current_value = type(options[0])(current_value_str)  # Convert to type based on first option.
+        try:
+            default_index = options.index(current_value)
+        except ValueError:
+            pass
+    value = st.selectbox(label, options, index=default_index, **kwargs)
+    if value != current_value:
+        current_query_params[query_param_name] = value
+        st.experimental_set_query_params(**current_query_params)
+    return value
 
-If you have any questions, checkout our [documentation](https://docs.streamlit.io) and [community
-forums](https://discuss.streamlit.io).
 
-In the meantime, below is an example of what you can do with just a few lines of code:
-"""
-
-
-with st.echo(code_location='below'):
-    total_points = st.slider("Number of points in spiral", 1, 5000, 2000)
-    num_turns = st.slider("Number of turns in spiral", 1, 100, 9)
-
-    Point = namedtuple('Point', 'x y')
-    data = []
-
-    points_per_turn = total_points / num_turns
-
-    for curr_point_num in range(total_points):
-        curr_turn, i = divmod(curr_point_num, points_per_turn)
-        angle = (curr_turn + 1) * 2 * math.pi * i / points_per_turn
-        radius = curr_point_num / total_points
-        x = radius * math.cos(angle)
-        y = radius * math.sin(angle)
-        data.append(Point(x, y))
-
-    st.altair_chart(alt.Chart(pd.DataFrame(data), height=500, width=500)
-        .mark_circle(color='#0068c9', opacity=0.5)
-        .encode(x='x:Q', y='y:Q'))
+val = selectbox_with_query_storage("Remember me", ["a", "b", "c", "d", "e"], query_param_name="choice")
+st.write(val)
